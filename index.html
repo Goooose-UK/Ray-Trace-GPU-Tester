@@ -5,17 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>GPU Scene Tester</title>
   <style>
-    :root {
-      color-scheme: dark;
-      font: 14px/1.45 system-ui, sans-serif;
-      background: #10151c;
-      color: #e8edf5;
-    }
     * { box-sizing: border-box; }
-    body { margin: 0; overflow: hidden; }
+    body { margin: 0; overflow: hidden; background: #10151c; color: #e8edf5; font: 14px/1.45 system-ui, sans-serif; }
     canvas { display: block; width: 100vw; height: 100vh; }
     #panel {
-      position: fixed; top: 12px; left: 12px; z-index: 2;
+      position: fixed; z-index: 2; top: 12px; left: 12px;
       width: min(310px, calc(100vw - 24px)); max-height: calc(100vh - 24px);
       overflow: auto; padding: 14px; border: 1px solid #384456;
       border-radius: 10px; background: #111923ed; backdrop-filter: blur(10px);
@@ -35,427 +29,665 @@
     button { cursor: pointer; }
     button:hover { background: #28384b; }
     #stats {
-      position: fixed; right: 12px; top: 12px; z-index: 2;
+      position: fixed; z-index: 2; top: 12px; right: 12px;
       padding: 9px 12px; border: 1px solid #384456; border-radius: 8px;
-      background: #111923ed; font: 12px/1.6 ui-monospace, monospace;
-      white-space: pre;
+      background: #111923ed; font: 12px/1.6 ui-monospace, monospace; white-space: pre;
     }
     #notice {
       position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
       padding: 8px 12px; border-radius: 7px; background: #111923dc;
       color: #d5dfed; pointer-events: none; text-align: center;
     }
-    .wide { grid-column: 1 / -1; }
   </style>
 </head>
 <body>
-  <canvas id="view"></canvas>
+<canvas id="view"></canvas>
 
-  <aside id="panel">
-    <h1>GPU Scene Tester</h1>
-    <div class="sub">Real-time WebGL workload · FPS is measured from rendered frames</div>
+<aside id="panel">
+  <h1>GPU Scene Tester</h1>
+  <div class="sub">WebGL workload · FPS measured from rendered frames</div>
 
-    <div class="row">
-      <label>Scene size
-        <select id="size">
-          <option value="small">Small</option>
-          <option value="mid" selected>Mid</option>
-          <option value="large">Large</option>
-        </select>
-      </label>
-      <label>Shader mode
-        <select id="shader">
-          <option value="normal">Normal</option>
-          <option value="ray">Ray tracing*</option>
-          <option value="path">Path tracing*</option>
-        </select>
-      </label>
-    </div>
+  <div class="row">
+    <label>Scene size
+      <select id="size">
+        <option value="small">Small</option>
+        <option value="mid" selected>Mid</option>
+        <option value="large">Large</option>
+      </select>
+    </label>
+    <label>Shader mode
+      <select id="shader">
+        <option value="normal">Normal</option>
+        <option value="ray">Ray tracing*</option>
+        <option value="path">Path tracing*</option>
+      </select>
+    </label>
+  </div>
 
-    <div class="row">
-      <label>Texture resolution
-        <select id="texture">
-          <option value="16">16 px</option>
-          <option value="32">32 px</option>
-          <option value="128" selected>128 px</option>
-          <option value="2000">2000 px</option>
-          <option value="4096">4K px</option>
-        </select>
-      </label>
-      <label>Render scale <span id="scaleOut">100%</span>
-        <input id="scale" type="range" min="0.5" max="1" step="0.05" value="1">
-      </label>
-    </div>
+  <div class="row">
+    <label>Texture resolution
+      <select id="texture">
+        <option value="16">16 px</option>
+        <option value="32">32 px</option>
+        <option value="128" selected>128 px</option>
+        <option value="2000">2000 px</option>
+        <option value="4096">4K px</option>
+      </select>
+    </label>
+    <label>Render scale <span id="scaleOut">100%</span>
+      <input id="scale" type="range" min="0.5" max="1" step="0.05" value="1">
+    </label>
+  </div>
 
-    <div class="row">
-      <label>Object count <span id="countOut">120</span>
-        <input id="count" type="range" min="10" max="1000" step="10" value="120">
-      </label>
-      <label>Light intensity <span id="lightOut">1.0</span>
-        <input id="light" type="range" min="0" max="3" step="0.1" value="1">
-      </label>
-    </div>
+  <div class="row">
+    <label>Object count <span id="countOut">120</span>
+      <input id="count" type="range" min="10" max="1000" step="10" value="120">
+    </label>
+    <label>Light intensity <span id="lightOut">1.0</span>
+      <input id="light" type="range" min="0" max="3" step="0.1" value="1">
+    </label>
+  </div>
 
-    <div class="row">
-      <label>Camera speed
-        <input id="speed" type="number" min="1" max="30" step="1" value="7">
-      </label>
-      <label>Field of view
-        <input id="fov" type="number" min="45" max="110" step="1" value="75">
-      </label>
-    </div>
+  <div class="row">
+    <label>Camera speed
+      <input id="speed" type="number" min="1" max="30" step="1" value="7">
+    </label>
+    <label>Field of view
+      <input id="fov" type="number" min="45" max="110" step="1" value="75">
+    </label>
+  </div>
 
-    <div class="row">
-      <label class="check"><input id="shadows" type="checkbox" checked> Ground shadows</label>
-      <label class="check"><input id="animate" type="checkbox" checked> Animate scene</label>
-    </div>
-    <button id="reset">Reset camera</button>
-    <p class="hint">
-      Click the scene to capture mouse. WASD move, mouse look, Space/Shift up/down,
-      Esc releases mouse.<br>
-      *Ray/path modes are clearly labeled shader approximations, not hardware ray tracing.
-      Workload settings are adjustable; browser/GPU limits may prevent very large textures.
-    </p>
-  </aside>
+  <div class="row">
+    <label class="check"><input id="shadows" type="checkbox" checked> Ground shading</label>
+    <label class="check"><input id="animate" type="checkbox" checked> Animate scene</label>
+  </div>
 
-  <div id="stats">FPS: —</div>
-  <div id="notice">Click the scene to look around · WASD to move</div>
+  <button id="reset">Reset camera</button>
+  <p class="hint">
+    Click the scene to capture mouse. WASD move, mouse look, Space/Shift up/down,
+    Esc releases mouse.<br>
+    *Ray/path modes are visual approximations, not hardware ray tracing.
+  </p>
+</aside>
+
+<div id="stats">Starting WebGL…</div>
+<div id="notice">Click the scene to look around · WASD to move</div>
 
 <script>
 (() => {
   "use strict";
-  const canvas = document.querySelector("#view");
+
+  const canvas = document.getElementById("view");
+  const stats = document.getElementById("stats");
   const gl = canvas.getContext("webgl", {
-    antialias: false, alpha: false, depth: true, powerPreference: "high-performance"
+    antialias: false,
+    alpha: false,
+    depth: true,
+    powerPreference: "high-performance"
   });
+
   if (!gl) {
-    document.querySelector("#stats").textContent = "WebGL unavailable";
+    stats.textContent = "WebGL unavailable";
+    document.getElementById("notice").textContent =
+      "WebGL is unavailable. Try enabling hardware acceleration or using another browser.";
     return;
   }
 
   const $ = id => document.getElementById(id);
+
   const vertexSource = `
     attribute vec3 aPosition;
     attribute vec3 aNormal;
     attribute vec2 aUV;
-    uniform mat4 uModel, uView, uProjection;
+
+    uniform mat4 uModel;
+    uniform mat4 uView;
+    uniform mat4 uProjection;
     uniform mat3 uNormalMatrix;
+
     varying vec3 vNormal;
     varying vec3 vWorld;
     varying vec2 vUV;
+
     void main() {
       vec4 world = uModel * vec4(aPosition, 1.0);
       vWorld = world.xyz;
       vNormal = normalize(uNormalMatrix * aNormal);
       vUV = aUV;
       gl_Position = uProjection * uView * world;
-    }`;
+    }
+  `;
 
   const fragmentSource = `
     precision highp float;
-    varying vec3 vNormal, vWorld;
+
+    varying vec3 vNormal;
+    varying vec3 vWorld;
     varying vec2 vUV;
-    uniform vec3 uColor, uCamera;
-    uniform float uTime, uLight, uTexel, uMode, uMaterial;
-    uniform bool uFloor, uShadows;
+
+    uniform vec3 uColor;
+    uniform vec3 uCamera;
+    uniform float uTime;
+    uniform float uLight;
+    uniform float uTexel;
+    uniform float uMode;
+    uniform float uMaterial;
+    uniform bool uFloor;
+    uniform bool uShadows;
 
     float hash(vec2 p) {
       return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
     }
+
     float noise(vec2 p) {
-      vec2 i = floor(p), f = fract(p);
-      f = f*f*(3.0-2.0*f);
-      return mix(mix(hash(i), hash(i+vec2(1.,0.)), f.x),
-                 mix(hash(i+vec2(0.,1.)), hash(i+vec2(1.,1.)), f.x), f.y);
+      vec2 i = floor(p);
+      vec2 f = fract(p);
+      f = f * f * (3.0 - 2.0 * f);
+
+      float a = hash(i);
+      float b = hash(i + vec2(1.0, 0.0));
+      float c = hash(i + vec2(0.0, 1.0));
+      float d = hash(i + vec2(1.0, 1.0));
+
+      return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
     }
+
+    // Declared before main so WebGL GLSL compilers can resolve it.
+    vec3 reflectionApprox(vec3 N, vec3 V, vec3 base) {
+      float fresnel = pow(1.0 - max(dot(N, V), 0.0), 3.0);
+      return mix(base, vec3(0.38, 0.55, 0.72), fresnel);
+    }
+
     void main() {
       float texRes = max(1.0, uTexel);
       vec2 uv = floor(vUV * texRes) / texRes;
       float n = noise(uv * min(texRes, 256.0) + floor(uTime * 3.0) * 0.03);
       vec3 base = uColor;
 
-      // Material variations: metal, water, glass, grass, lava.
+      // 0 metal, 1 water, 2 glass, 3 grass, 4 lava
       if (uMaterial < 0.5) {
-        base *= 0.78 + 0.22*n;
+        base *= 0.78 + 0.22 * n;
       } else if (uMaterial < 1.5) {
-        base *= 0.72 + 0.28*n;
+        base *= 0.72 + 0.28 * n;
       } else if (uMaterial < 2.5) {
-        base = mix(base, vec3(0.65,0.88,1.0), 0.28);
+        base = mix(base, vec3(0.65, 0.88, 1.0), 0.28);
       } else if (uMaterial < 3.5) {
-        float blades = step(0.72, noise(uv*min(texRes,128.0)*0.35));
-        base = mix(base*0.65, base*1.25, blades);
+        float blades = step(0.72, noise(uv * min(texRes, 128.0) * 0.35));
+        base = mix(base * 0.65, base * 1.25, blades);
       } else {
-        float flow = noise(uv*min(texRes,128.0)*0.18 + vec2(uTime*0.13,-uTime*0.08));
-        base = mix(vec3(0.28,0.025,0.005), vec3(1.0,0.22,0.015), flow);
-        base += vec3(0.35,0.08,0.0)*smoothstep(0.68,0.92,flow);
+        float flow = noise(
+          uv * min(texRes, 128.0) * 0.18 +
+          vec2(uTime * 0.13, -uTime * 0.08)
+        );
+        base = mix(vec3(0.28, 0.025, 0.005), vec3(1.0, 0.22, 0.015), flow);
+        base += vec3(0.35, 0.08, 0.0) * smoothstep(0.68, 0.92, flow);
       }
 
       vec3 N = normalize(vNormal);
       vec3 L = normalize(vec3(-0.45, 0.8, 0.35));
       vec3 V = normalize(uCamera - vWorld);
-      float diffuse = max(dot(N,L),0.0);
-      float specular = pow(max(dot(reflect(-L,N),V),0.0), uMaterial==0.0 ? 56.0 : 20.0);
-      float lighting = 0.22 + diffuse * uLight;
-      vec3 color = base * lighting;
 
-      if (uMaterial < 0.5) color += specular * vec3(0.75) * uLight;
+      float diffuse = max(dot(N, L), 0.0);
+      float shine = pow(max(dot(reflect(-L, N), V), 0.0), 40.0);
+      vec3 color = base * (0.22 + diffuse * uLight);
+
+      if (uMaterial < 0.5) color += shine * vec3(0.75) * uLight;
+
       if (uMaterial > 1.5 && uMaterial < 2.5) {
-        color += specular * vec3(0.65,0.85,1.0);
-        color = mix(color, vec3(0.48,0.7,0.85), 0.10);
+        color += shine * vec3(0.65, 0.85, 1.0);
+        color = mix(color, vec3(0.48, 0.7, 0.85), 0.10);
       }
+
       if (uMaterial > 3.5) color += base * 0.48;
 
       if (uMode > 0.5 && uMode < 1.5) {
-        // Screen-space reflection-style approximation; not ray tracing.
-        vec3 reflected = textureCubePlaceholder(N, V, base);
-        color = mix(color, reflected, 0.18);
+        color = mix(color, reflectionApprox(N, V, base), 0.18);
       }
+
       if (uMode > 1.5) {
-        // Cheap multi-sample lighting approximation; not path tracing.
-        float bounce = 0.5 + 0.5*noise(gl_FragCoord.xy*0.035 + uTime*0.02);
-        color = color * (0.78 + 0.22*bounce) + base*0.08*bounce;
+        float bounce = 0.5 + 0.5 * noise(gl_FragCoord.xy * 0.035 + uTime * 0.02);
+        color = color * (0.78 + 0.22 * bounce) + base * 0.08 * bounce;
       }
+
       if (uFloor && uShadows) {
-        float shadow = 0.78 + 0.22*smoothstep(-0.1, 0.8, vWorld.y);
-        color *= shadow;
+        color *= 0.88 + 0.12 * smoothstep(-0.1, 0.8, vWorld.y);
       }
+
       gl_FragColor = vec4(color, 1.0);
     }
-    vec3 textureCubePlaceholder(vec3 N, vec3 V, vec3 base) {
-      float fresnel = pow(1.0-max(dot(N,V),0.0), 3.0);
-      return mix(base, vec3(0.38,0.55,0.72), fresnel);
-    }`;
+  `;
 
-  function compile(type, source) {
+  function compileShader(type, source) {
     const shader = gl.createShader(type);
     gl.shaderSource(shader, source);
     gl.compileShader(shader);
+
     if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-      throw new Error(gl.getShaderInfoLog(shader));
+      const message = gl.getShaderInfoLog(shader) || "Unknown shader error";
+      gl.deleteShader(shader);
+      throw new Error(message);
     }
+
     return shader;
   }
+
   let program;
+
   try {
     program = gl.createProgram();
-    gl.attachShader(program, compile(gl.VERTEX_SHADER, vertexSource));
-    gl.attachShader(program, compile(gl.FRAGMENT_SHADER, fragmentSource));
+    gl.attachShader(program, compileShader(gl.VERTEX_SHADER, vertexSource));
+    gl.attachShader(program, compileShader(gl.FRAGMENT_SHADER, fragmentSource));
     gl.linkProgram(program);
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(program));
-  } catch (e) {
-    document.querySelector("#stats").textContent = "Shader error";
-    console.error(e);
+
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      throw new Error(gl.getProgramInfoLog(program) || "Could not link WebGL program.");
+    }
+  } catch (error) {
+    stats.textContent = "WebGL shader error";
+    document.getElementById("notice").textContent = error.message;
+    console.error(error);
     return;
   }
+
   gl.useProgram(program);
 
-  const loc = name => gl.getUniformLocation(program, name);
+  const uniform = name => gl.getUniformLocation(program, name);
   const U = {
-    model: loc("uModel"), view: loc("uView"), projection: loc("uProjection"),
-    normal: loc("uNormalMatrix"), color: loc("uColor"), camera: loc("uCamera"),
-    time: loc("uTime"), light: loc("uLight"), texel: loc("uTexel"),
-    mode: loc("uMode"), material: loc("uMaterial"),
-    floor: loc("uFloor"), shadows: loc("uShadows")
+    model: uniform("uModel"),
+    view: uniform("uView"),
+    projection: uniform("uProjection"),
+    normal: uniform("uNormalMatrix"),
+    color: uniform("uColor"),
+    camera: uniform("uCamera"),
+    time: uniform("uTime"),
+    light: uniform("uLight"),
+    texel: uniform("uTexel"),
+    mode: uniform("uMode"),
+    material: uniform("uMaterial"),
+    floor: uniform("uFloor"),
+    shadows: uniform("uShadows")
   };
 
-  function meshData(kind) {
-    const p=[], n=[], uv=[], ix=[];
-    function face(a,b,c,d,normal) {
-      const start=p.length/3;
-      for (const [v,t] of [[a,[0,0]],[b,[1,0]],[c,[1,1]],[d,[0,1]]]) {
-        p.push(...v); n.push(...normal); uv.push(...t);
+  function makeMeshData(kind) {
+    const positions = [];
+    const normals = [];
+    const uvs = [];
+    const indices = [];
+
+    function addFace(a, b, c, d, normal) {
+      const start = positions.length / 3;
+      for (const [point, uv] of [
+        [a, [0, 0]], [b, [1, 0]], [c, [1, 1]], [d, [0, 1]]
+      ]) {
+        positions.push(...point);
+        normals.push(...normal);
+        uvs.push(...uv);
       }
-      ix.push(start,start+1,start+2,start,start+2,start+3);
+      indices.push(start, start + 1, start + 2, start, start + 2, start + 3);
     }
+
     if (kind === "cube") {
-      const faces=[
-        [[-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1],[0,0,1]],
-        [[1,-1,-1],[-1,-1,-1],[-1,1,-1],[1,1,-1],[0,0,-1]],
-        [[1,-1,1],[1,-1,-1],[1,1,-1],[1,1,1],[1,0,0]],
-        [[-1,-1,-1],[-1,-1,1],[-1,1,1],[-1,1,-1],[-1,0,0]],
-        [[-1,1,1],[1,1,1],[1,1,-1],[-1,1,-1],[0,1,0]],
-        [[-1,-1,-1],[1,-1,-1],[1,-1,1],[-1,-1,1],[0,-1,0]]
-      ];
-      faces.forEach(f=>face(...f));
+      addFace([-1,-1,1], [1,-1,1], [1,1,1], [-1,1,1], [0,0,1]);
+      addFace([1,-1,-1], [-1,-1,-1], [-1,1,-1], [1,1,-1], [0,0,-1]);
+      addFace([1,-1,1], [1,-1,-1], [1,1,-1], [1,1,1], [1,0,0]);
+      addFace([-1,-1,-1], [-1,-1,1], [-1,1,1], [-1,1,-1], [-1,0,0]);
+      addFace([-1,1,1], [1,1,1], [1,1,-1], [-1,1,-1], [0,1,0]);
+      addFace([-1,-1,-1], [1,-1,-1], [1,-1,1], [-1,-1,1], [0,-1,0]);
     } else if (kind === "sphere") {
-      const rings=12, seg=18;
-      for(let y=0;y<=rings;y++) {
-        const v=y/rings, phi=v*Math.PI;
-        for(let x=0;x<=seg;x++) {
-          const u=x/seg, theta=u*Math.PI*2;
-          const q=[Math.sin(phi)*Math.cos(theta),Math.cos(phi),Math.sin(phi)*Math.sin(theta)];
-          p.push(...q); n.push(...q); uv.push(u,v);
+      const rings = 12;
+      const segments = 18;
+
+      for (let y = 0; y <= rings; y++) {
+        const v = y / rings;
+        const phi = v * Math.PI;
+
+        for (let x = 0; x <= segments; x++) {
+          const u = x / segments;
+          const theta = u * Math.PI * 2;
+          const point = [
+            Math.sin(phi) * Math.cos(theta),
+            Math.cos(phi),
+            Math.sin(phi) * Math.sin(theta)
+          ];
+          positions.push(...point);
+          normals.push(...point);
+          uvs.push(u, v);
         }
       }
-      for(let y=0;y<rings;y++) for(let x=0;x<seg;x++) {
-        const a=y*(seg+1)+x,b=a+seg+1;
-        ix.push(a,b,a+1,b,b+1,a+1);
+
+      for (let y = 0; y < rings; y++) {
+        for (let x = 0; x < segments; x++) {
+          const a = y * (segments + 1) + x;
+          const b = a + segments + 1;
+          indices.push(a, b, a + 1, b, b + 1, a + 1);
+        }
       }
     } else {
-      // Cylinder
-      const seg=20;
-      for(let i=0;i<=seg;i++) {
-        const a=i/seg*Math.PI*2, x=Math.cos(a), z=Math.sin(a);
-        p.push(x,-1,z,x,1,z); n.push(x,0,z,x,0,z); uv.push(i/seg,0,i/seg,1);
+      const segments = 20;
+
+      for (let i = 0; i <= segments; i++) {
+        const angle = (i / segments) * Math.PI * 2;
+        const x = Math.cos(angle);
+        const z = Math.sin(angle);
+
+        positions.push(x, -1, z, x, 1, z);
+        normals.push(x, 0, z, x, 0, z);
+        uvs.push(i / segments, 0, i / segments, 1);
       }
-      for(let i=0;i<seg;i++) {
-        const a=i*2,b=a+2; ix.push(a,b,a+1,b,b+1,a+1);
+
+      for (let i = 0; i < segments; i++) {
+        const a = i * 2;
+        const b = a + 2;
+        indices.push(a, b, a + 1, b, b + 1, a + 1);
       }
     }
-    return {p:new Float32Array(p),n:new Float32Array(n),uv:new Float32Array(uv),ix:new Uint16Array(ix)};
+
+    return {
+      positions: new Float32Array(positions),
+      normals: new Float32Array(normals),
+      uvs: new Float32Array(uvs),
+      indices: new Uint16Array(indices)
+    };
   }
 
-  function makeMesh(data) {
-    const buffers={};
-    for(const [name, values] of [["p",data.p],["n",data.n],["uv",data.uv]]) {
-      buffers[name]=gl.createBuffer();
-      gl.bindBuffer(gl.ARRAY_BUFFER,buffers[name]); gl.bufferData(gl.ARRAY_BUFFER,values,gl.STATIC_DRAW);
+  function createMesh(data) {
+    const mesh = {};
+
+    for (const [key, values] of [
+      ["positions", data.positions],
+      ["normals", data.normals],
+      ["uvs", data.uvs]
+    ]) {
+      mesh[key] = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, mesh[key]);
+      gl.bufferData(gl.ARRAY_BUFFER, values, gl.STATIC_DRAW);
     }
-    buffers.idx=gl.createBuffer();
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,buffers.idx); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,data.ix,gl.STATIC_DRAW);
-    buffers.count=data.ix.length;
-    return buffers;
-  }
-  const meshes={cube:makeMesh(meshData("cube")),sphere:makeMesh(meshData("sphere")),cylinder:makeMesh(meshData("cylinder"))};
-  const attrs={p:gl.getAttribLocation(program,"aPosition"),n:gl.getAttribLocation(program,"aNormal"),uv:gl.getAttribLocation(program,"aUV")};
 
-  function bindMesh(m) {
-    for(const [key,size] of [["p",3],["n",3],["uv",2]]) {
-      gl.bindBuffer(gl.ARRAY_BUFFER,m[key]);
-      gl.enableVertexAttribArray(attrs[key]);
-      gl.vertexAttribPointer(attrs[key],size,gl.FLOAT,false,0,0);
+    mesh.indices = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, mesh.indices);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, data.indices, gl.STATIC_DRAW);
+    mesh.count = data.indices.length;
+    return mesh;
+  }
+
+  const meshes = {
+    cube: createMesh(makeMeshData("cube")),
+    sphere: createMesh(makeMeshData("sphere")),
+    cylinder: createMesh(makeMeshData("cylinder"))
+  };
+
+  const A = {
+    position: gl.getAttribLocation(program, "aPosition"),
+    normal: gl.getAttribLocation(program, "aNormal"),
+    uv: gl.getAttribLocation(program, "aUV")
+  };
+
+  function bindMesh(mesh) {
+    for (const [key, attribute, size] of [
+      ["positions", A.position, 3],
+      ["normals", A.normal, 3],
+      ["uvs", A.uv, 2]
+    ]) {
+      gl.bindBuffer(gl.ARRAY_BUFFER, mesh[key]);
+      gl.enableVertexAttribArray(attribute);
+      gl.vertexAttribPointer(attribute, size, gl.FLOAT, false, 0, 0);
     }
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,m.idx);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, mesh.indices);
   }
 
-  // Minimal column-major matrix helpers.
-  const I=()=>[1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1];
-  function multiply(a,b) {
-    const o=new Array(16);
-    for(let c=0;c<4;c++) for(let r=0;r<4;r++)
-      o[c*4+r]=a[r]*b[c*4]+a[4+r]*b[c*4+1]+a[8+r]*b[c*4+2]+a[12+r]*b[c*4+3];
-    return o;
-  }
-  function perspective(fov,aspect,near,far) {
-    const f=1/Math.tan(fov*Math.PI/360), nf=1/(near-far);
-    return [f/aspect,0,0,0, 0,f,0,0, 0,0,(far+near)*nf,-1, 0,0,2*far*near*nf,0];
-  }
-  function modelMatrix(pos, scale, rotY=0) {
-    const c=Math.cos(rotY),s=Math.sin(rotY);
-    return [c*scale[0],0,-s*scale[0],0, 0,scale[1],0,0, s*scale[2],0,c*scale[2],0, pos[0],pos[1],pos[2],1];
-  }
-  function normalMatrix(m) {
-    // For rotation + scale matrices, inverse transpose is rotation divided by scale.
-    return [m[0]/(m[0]*m[0]+m[2]*m[2]),m[1],m[2]/(m[0]*m[0]+m[2]*m[2]),
-      0,1/m[5],0, m[8]/(m[8]*m[8]+m[10]*m[10]),m[9],m[10]/(m[8]*m[8]+m[10]*m[10])];
-  }
-  function lookAt(eye,yaw,pitch) {
-    const cp=Math.cos(pitch), forward=[Math.sin(yaw)*cp,Math.sin(pitch),-Math.cos(yaw)*cp];
-    const right=[Math.cos(yaw),0,Math.sin(yaw)];
-    const up=[-Math.sin(yaw)*Math.sin(pitch),Math.cos(pitch),Math.cos(yaw)*Math.sin(pitch)];
-    return [right[0],up[0],-forward[0],0,
-            right[1],up[1],-forward[1],0,
-            right[2],up[2],-forward[2],0,
-            -dot(right,eye),-dot(up,eye),dot(forward,eye),1];
-  }
-  const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+  function modelMatrix(position, scale, rotation = 0) {
+    const c = Math.cos(rotation);
+    const s = Math.sin(rotation);
 
-  let cam={x:0,y:2.2,z:9,yaw:0,pitch:-0.08};
-  const keys=new Set();
-  addEventListener("keydown",e=>{keys.add(e.code);if(["Space","ArrowUp","ArrowDown"].includes(e.code))e.preventDefault();});
-  addEventListener("keyup",e=>keys.delete(e.code));
-  $("reset").onclick=()=>cam={x:0,y:2.2,z:9,yaw:0,pitch:-0.08};
-  canvas.addEventListener("click",()=>canvas.requestPointerLock?.());
-  addEventListener("mousemove",e=>{
-    if(document.pointerLockElement!==canvas)return;
-    cam.yaw-=e.movementX*0.0022;
-    cam.pitch=Math.max(-1.5,Math.min(1.5,cam.pitch-e.movementY*0.0022));
+    return new Float32Array([
+      c * scale[0], 0, -s * scale[0], 0,
+      0, scale[1], 0, 0,
+      s * scale[2], 0, c * scale[2], 0,
+      position[0], position[1], position[2], 1
+    ]);
+  }
+
+  function normalMatrix(model) {
+    const sx = Math.hypot(model[0], model[2]) || 1;
+    const sz = Math.hypot(model[8], model[10]) || 1;
+
+    return new Float32Array([
+      model[0] / (sx * sx), 0, model[2] / (sx * sx),
+      0, 1 / (model[5] || 1), 0,
+      model[8] / (sz * sz), 0, model[10] / (sz * sz)
+    ]);
+  }
+
+  function perspective(fov, aspect, near, far) {
+    const f = 1 / Math.tan((fov * Math.PI / 180) / 2);
+    const nf = 1 / (near - far);
+
+    return new Float32Array([
+      f / aspect, 0, 0, 0,
+      0, f, 0, 0,
+      0, 0, (far + near) * nf, -1,
+      0, 0, (2 * far * near) * nf, 0
+    ]);
+  }
+
+  function dot(a, b) {
+    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  }
+
+  function viewMatrix(eye, yaw, pitch) {
+    const cp = Math.cos(pitch);
+    const forward = [Math.sin(yaw) * cp, Math.sin(pitch), -Math.cos(yaw) * cp];
+    const right = [Math.cos(yaw), 0, Math.sin(yaw)];
+    const up = [
+      -Math.sin(yaw) * Math.sin(pitch),
+      Math.cos(pitch),
+      Math.cos(yaw) * Math.sin(pitch)
+    ];
+
+    return new Float32Array([
+      right[0], up[0], -forward[0], 0,
+      right[1], up[1], -forward[1], 0,
+      right[2], up[2], -forward[2], 0,
+      -dot(right, eye), -dot(up, eye), dot(forward, eye), 1
+    ]);
+  }
+
+  let camera = { x: 0, y: 2.2, z: 9, yaw: 0, pitch: -0.08 };
+  const keys = new Set();
+
+  addEventListener("keydown", event => {
+    keys.add(event.code);
+    if (["Space", "ArrowUp", "ArrowDown"].includes(event.code)) event.preventDefault();
   });
 
-  let last=performance.now(), frames=0, fps=0;
-  const materialNames=["Metal","Water","Glass","Grass","Lava"];
-  const colors=[[0.56,0.62,0.72],[0.08,0.40,0.75],[0.55,0.79,0.86],[0.12,0.48,0.12],[0.9,0.13,0.015]];
-  const rand=(a,b)=>a+Math.random()*(b-a);
-  let objects=[];
+  addEventListener("keyup", event => keys.delete(event.code));
 
-  function rebuild() {
-    const size=$("size").value;
-    const count=Math.min(+$("count").value, size==="small"?120:size==="mid"?450:1000);
-    const span=size==="small"?7:size==="mid"?15:27;
-    objects=[];
-    for(let i=0;i<count;i++) {
-      const mat=i%5, kind=["cube","sphere","cylinder"][i%3];
+  $("reset").addEventListener("click", () => {
+    camera = { x: 0, y: 2.2, z: 9, yaw: 0, pitch: -0.08 };
+  });
+
+  canvas.addEventListener("click", () => {
+    if (canvas.requestPointerLock) canvas.requestPointerLock();
+  });
+
+  addEventListener("mousemove", event => {
+    if (document.pointerLockElement !== canvas) return;
+    camera.yaw -= event.movementX * 0.0022;
+    camera.pitch = Math.max(
+      -1.5,
+      Math.min(1.5, camera.pitch - event.movementY * 0.0022)
+    );
+  });
+
+  const colors = [
+    [0.56, 0.62, 0.72], // metal
+    [0.08, 0.40, 0.75], // water
+    [0.55, 0.79, 0.86], // glass
+    [0.12, 0.48, 0.12], // grass
+    [0.9, 0.13, 0.015]  // lava
+  ];
+
+  let objects = [];
+
+  function random(min, max) {
+    return min + Math.random() * (max - min);
+  }
+
+  function rebuildScene() {
+    const size = $("size").value;
+    const limit = size === "small" ? 120 : size === "mid" ? 450 : 1000;
+    const span = size === "small" ? 7 : size === "mid" ? 15 : 27;
+    const count = Math.min(Number($("count").value), limit);
+
+    objects = [];
+
+    for (let i = 0; i < count; i++) {
+      const material = i % 5;
       objects.push({
-        x:rand(-span,span), z:rand(-span,span), y:rand(0.35,1.4),
-        s:rand(0.28,0.85), rot:rand(0,6.28), speed:rand(-0.35,0.35),
-        mat, kind, color:colors[mat]
+        x: random(-span, span),
+        y: random(0.35, 1.4),
+        z: random(-span, span),
+        scale: random(0.28, 0.85),
+        rotation: random(0, Math.PI * 2),
+        speed: random(-0.35, 0.35),
+        material,
+        kind: ["cube", "sphere", "cylinder"][i % 3],
+        color: colors[material]
       });
     }
   }
-  $("size").onchange=rebuild;
-  $("count").oninput=()=>{$("countOut").textContent=$("count").value;rebuild();};
-  $("scale").oninput=()=>$("scaleOut").textContent=Math.round(+$("scale").value*100)+"%";
-  $("light").oninput=()=>$("lightOut").textContent=(+$("light").value).toFixed(1);
-  rebuild();
+
+  $("size").addEventListener("change", rebuildScene);
+  $("count").addEventListener("input", () => {
+    $("countOut").textContent = $("count").value;
+    rebuildScene();
+  });
+  $("scale").addEventListener("input", () => {
+    $("scaleOut").textContent = `${Math.round(Number($("scale").value) * 100)}%`;
+  });
+  $("light").addEventListener("input", () => {
+    $("lightOut").textContent = Number($("light").value).toFixed(1);
+  });
+
+  rebuildScene();
 
   function draw(mesh, model, color, material, isFloor, mode, time) {
     bindMesh(mesh);
-    gl.uniformMatrix4fv(U.model,false,new Float32Array(model));
-    gl.uniformMatrix3fv(U.normal,false,new Float32Array(normalMatrix(model)));
-    gl.uniform3fv(U.color,color);
-    gl.uniform1f(U.material,material);
-    gl.uniform1i(U.floor,isFloor?1:0);
-    gl.uniform1f(U.time,time);
-    gl.uniform1f(U.mode,mode);
-    gl.drawElements(gl.TRIANGLES,mesh.count,gl.UNSIGNED_SHORT,0);
+    gl.uniformMatrix4fv(U.model, false, model);
+    gl.uniformMatrix3fv(U.normal, false, normalMatrix(model));
+    gl.uniform3fv(U.color, color);
+    gl.uniform1f(U.material, material);
+    gl.uniform1i(U.floor, isFloor ? 1 : 0);
+    gl.uniform1f(U.time, time);
+    gl.uniform1f(U.mode, mode);
+    gl.drawElements(gl.TRIANGLES, mesh.count, gl.UNSIGNED_SHORT, 0);
   }
 
-  function frame(now) {
-    requestAnimationFrame(frame);
-    const dt=Math.min((now-last)/1000,0.05); last=now;
-    frames++;
-    if(now-window.fpsAt>=500) {
-      fps=frames*1000/(now-window.fpsAt); frames=0; window.fpsAt=now;
-      $("stats").textContent=`FPS: ${fps.toFixed(1)}\nObjects: ${objects.length}\nRenderer: WebGL`;
+  let lastTime = performance.now();
+  let fpsFrames = 0;
+  let fpsStart = lastTime;
+
+  function render(now) {
+    requestAnimationFrame(render);
+
+    const dt = Math.min((now - lastTime) / 1000, 0.05);
+    lastTime = now;
+
+    fpsFrames++;
+    if (now - fpsStart >= 500) {
+      const fps = fpsFrames * 1000 / (now - fpsStart);
+      stats.textContent = `FPS: ${fps.toFixed(1)}\nObjects: ${objects.length}\nRenderer: WebGL`;
+      fpsFrames = 0;
+      fpsStart = now;
     }
-    const speed=Math.max(1,Math.min(30,+$("speed").value||7))*dt;
-    const forward=[Math.sin(cam.yaw),0,-Math.cos(cam.yaw)];
-    const right=[Math.cos(cam.yaw),0,Math.sin(cam.yaw)];
-    if(keys.has("KeyW")){cam.x+=forward[0]*speed;cam.z+=forward[2]*speed;}
-    if(keys.has("KeyS")){cam.x-=forward[0]*speed;cam.z-=forward[2]*speed;}
-    if(keys.has("KeyD")){cam.x+=right[0]*speed;cam.z+=right[2]*speed;}
-    if(keys.has("KeyA")){cam.x-=right[0]*speed;cam.z-=right[2]*speed;}
-    if(keys.has("Space"))cam.y+=speed;
-    if(keys.has("ShiftLeft")||keys.has("ShiftRight"))cam.y-=speed;
 
-    const scale=+$("scale").value;
-    const width=Math.max(1,Math.floor(innerWidth*scale)), height=Math.max(1,Math.floor(innerHeight*scale));
-    if(canvas.width!==width||canvas.height!==height){canvas.width=width;canvas.height=height;}
-    gl.viewport(0,0,width,height);
-    gl.enable(gl.DEPTH_TEST); gl.clearColor(0.035,0.055,0.08,1);
-    gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+    const speed = Math.max(1, Math.min(30, Number($("speed").value) || 7)) * dt;
+    const forward = [Math.sin(camera.yaw), 0, -Math.cos(camera.yaw)];
+    const right = [Math.cos(camera.yaw), 0, Math.sin(camera.yaw)];
 
-    const view=lookAt([cam.x,cam.y,cam.z],cam.yaw,cam.pitch);
-    const projection=perspective(Math.max(45,Math.min(110,+$("fov").value||75)),width/height,0.1,250);
-    gl.uniformMatrix4fv(U.view,false,new Float32Array(view));
-    gl.uniformMatrix4fv(U.projection,false,new Float32Array(projection));
-    gl.uniform3f(U.camera,cam.x,cam.y,cam.z);
-    gl.uniform1f(U.light,+$("light").value);
-    gl.uniform1f(U.texel,+$("texture").value);
-    gl.uniform1i(U.shadows,$("shadows").checked?1:0);
-    const mode=$("shader").value==="ray"?1:$("shader").value==="path"?2:0;
-    const time=$("animate").checked?now/1000:0;
+    if (keys.has("KeyW")) {
+      camera.x += forward[0] * speed;
+      camera.z += forward[2] * speed;
+    }
+    if (keys.has("KeyS")) {
+      camera.x -= forward[0] * speed;
+      camera.z -= forward[2] * speed;
+    }
+    if (keys.has("KeyD")) {
+      camera.x += right[0] * speed;
+      camera.z += right[2] * speed;
+    }
+    if (keys.has("KeyA")) {
+      camera.x -= right[0] * speed;
+      camera.z -= right[2] * speed;
+    }
+    if (keys.has("Space")) camera.y += speed;
+    if (keys.has("ShiftLeft") || keys.has("ShiftRight")) camera.y -= speed;
 
-    // Ground plane
-    draw(meshes.cube,modelMatrix([0,-0.18,0],[30,0.12,30]),[0.20,0.24,0.20],3,true,mode,time);
-    for(const o of objects) {
-      const bob=$("animate").checked?Math.sin(time*o.speed*2+o.rot)*0.08:0;
-      draw(meshes[o.kind],modelMatrix([o.x,o.y+bob,o.z],[o.s,o.s,o.s],o.rot+time*o.speed),
-        o.color,o.mat,false,mode,time);
+    const renderScale = Number($("scale").value);
+    const width = Math.max(1, Math.floor(innerWidth * renderScale));
+    const height = Math.max(1, Math.floor(innerHeight * renderScale));
+
+    if (canvas.width !== width || canvas.height !== height) {
+      canvas.width = width;
+      canvas.height = height;
+    }
+
+    gl.viewport(0, 0, width, height);
+    gl.enable(gl.DEPTH_TEST);
+    gl.clearColor(0.035, 0.055, 0.08, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+    gl.uniformMatrix4fv(U.view, false, viewMatrix(
+      [camera.x, camera.y, camera.z], camera.yaw, camera.pitch
+    ));
+    gl.uniformMatrix4fv(U.projection, false, perspective(
+      Math.max(45, Math.min(110, Number($("fov").value) || 75)),
+      width / height,
+      0.1,
+      250
+    ));
+    gl.uniform3f(U.camera, camera.x, camera.y, camera.z);
+    gl.uniform1f(U.light, Number($("light").value));
+    gl.uniform1f(U.texel, Number($("texture").value));
+    gl.uniform1i(U.shadows, $("shadows").checked ? 1 : 0);
+
+    const shader = $("shader").value;
+    const mode = shader === "ray" ? 1 : shader === "path" ? 2 : 0;
+    const time = $("animate").checked ? now / 1000 : 0;
+
+    draw(
+      meshes.cube,
+      modelMatrix([0, -0.18, 0], [30, 0.12, 30]),
+      [0.20, 0.24, 0.20],
+      3,
+      true,
+      mode,
+      time
+    );
+
+    for (const object of objects) {
+      const bob = $("animate").checked
+        ? Math.sin(time * object.speed * 2 + object.rotation) * 0.08
+        : 0;
+
+      draw(
+        meshes[object.kind],
+        modelMatrix(
+          [object.x, object.y + bob, object.z],
+          [object.scale, object.scale, object.scale],
+          object.rotation + time * object.speed
+        ),
+        object.color,
+        object.material,
+        false,
+        mode,
+        time
+      );
     }
   }
-  window.fpsAt=performance.now();
-  requestAnimationFrame(frame);
+
+  requestAnimationFrame(render);
 })();
 </script>
 </body>
