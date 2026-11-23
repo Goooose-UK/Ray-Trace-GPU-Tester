@@ -5,26 +5,23 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>GPU Scene Tester</title>
 <style>
-  *{box-sizing:border-box}
-  html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#090d13;color:#edf3fb;font:14px system-ui,sans-serif}
-  canvas{display:block;width:100%;height:100%}
-  #panel,#stats,#notice{
-    position:fixed;z-index:2;background:#101923eF;border:1px solid #37465a;
-    border-radius:9px;backdrop-filter:blur(8px)
-  }
-  #panel{left:12px;top:12px;width:min(320px,calc(100vw - 24px));max-height:calc(100vh - 24px);overflow:auto;padding:14px}
-  h1{font-size:17px;margin:0 0 3px}
-  .sub,.hint{color:#aab8ca;font-size:12px}
-  .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-  label{display:block;margin-top:9px;color:#cbd5e2;font-size:12px}
-  input,select,button{font:inherit}
-  select,input[type=number],button{width:100%;margin-top:4px;padding:7px;border:1px solid #405067;border-radius:6px;background:#1a2635;color:#f2f6fc}
-  input[type=range]{width:100%;accent-color:#70b7ff}
-  input[type=checkbox]{accent-color:#70b7ff}
-  .check{display:flex;align-items:center;gap:7px}
-  button{cursor:pointer}
-  #stats{right:12px;top:12px;padding:9px 12px;font:12px/1.6 ui-monospace,monospace;white-space:pre}
-  #notice{left:50%;bottom:14px;transform:translateX(-50%);padding:8px 12px;white-space:nowrap;pointer-events:none}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#090d13;color:#edf3fb;font:14px system-ui,sans-serif}
+canvas{display:block;width:100%;height:100%}
+#panel,#stats,#notice{position:fixed;z-index:2;background:#101923ef;border:1px solid #37465a;border-radius:9px;backdrop-filter:blur(8px)}
+#panel{left:12px;top:12px;width:min(330px,calc(100vw - 24px));max-height:calc(100vh - 24px);overflow:auto;padding:14px}
+h1{font-size:17px;margin:0 0 3px}
+.sub,.hint{color:#aab8ca;font-size:12px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+label{display:block;margin-top:9px;color:#cbd5e2;font-size:12px}
+select,input,button{font:inherit}
+select,input[type=number],button{width:100%;margin-top:4px;padding:7px;border:1px solid #405067;border-radius:6px;background:#1a2635;color:#f2f6fc}
+input[type=range]{width:100%;accent-color:#70b7ff}
+input[type=checkbox]{accent-color:#70b7ff}
+.check{display:flex;align-items:center;gap:7px}
+button{cursor:pointer}
+#stats{right:12px;top:12px;padding:9px 12px;font:12px/1.6 ui-monospace,monospace;white-space:pre}
+#notice{left:50%;bottom:14px;transform:translateX(-50%);padding:8px 12px;white-space:nowrap;pointer-events:none}
 </style>
 </head>
 <body>
@@ -32,15 +29,21 @@
 
 <aside id="panel">
   <h1>GPU Scene Tester</h1>
-  <div class="sub">WebGL workload · measured rendered-frame FPS</div>
+  <div class="sub">WebGL workload · FPS measured from rendered frames</div>
+
   <div class="row">
     <label>Scene size
       <select id="size"><option>Small</option><option selected>Mid</option><option>Large</option></select>
     </label>
-    <label>Shader mode
-      <select id="shader"><option value="normal">Normal</option><option value="ray">Reflection approx.</option><option value="path">Path-light approx.</option></select>
+    <label>Shader effects
+      <select id="shader">
+        <option value="normal">Standard</option>
+        <option value="reflect">Reflection approximation</option>
+        <option value="path">Extra lighting approximation</option>
+      </select>
     </label>
   </div>
+
   <div class="row">
     <label>Texture resolution
       <select id="resolution">
@@ -53,33 +56,45 @@
       <input id="scale" type="range" min=".5" max="1" step=".05" value="1">
     </label>
   </div>
+
   <div class="row">
     <label>Object count <span id="countLabel">120</span>
       <input id="count" type="range" min="10" max="1000" step="10" value="120">
     </label>
-    <label>Light intensity <span id="lightLabel">1.0</span>
-      <input id="light" type="range" min="0" max="3" step=".1" value="1">
+    <label>Light level <span id="lightLabel">16</span>
+      <input id="light" type="range" min="1" max="64" step="1" value="16">
     </label>
   </div>
+
   <div class="row">
     <label>Camera speed<input id="speed" type="number" min="1" max="30" value="7"></label>
     <label>Field of view<input id="fov" type="number" min="45" max="110" value="75"></label>
   </div>
+
   <div class="row">
-    <label class="check"><input id="lights" type="checkbox" checked> Point lights</label>
-    <label class="check"><input id="puddles" type="checkbox" checked> Water puddles</label>
+    <label class="check"><input id="lamps" type="checkbox" checked> Lamps / point lights</label>
+    <label class="check"><input id="lampGlow" type="checkbox" checked> Lamp glow</label>
   </div>
   <div class="row">
+    <label class="check"><input id="shadows" type="checkbox" checked> Approx. shadows</label>
     <label class="check"><input id="reflections" type="checkbox" checked> Reflections</label>
+  </div>
+  <div class="row">
+    <label class="check"><input id="puddles" type="checkbox" checked> Water puddles</label>
+    <label class="check"><input id="ripples" type="checkbox" checked> Animated ripples</label>
+  </div>
+  <div class="row">
+    <label class="check"><input id="refraction" type="checkbox" checked> Refraction effect</label>
     <label class="check"><input id="animate" type="checkbox" checked> Animate scene</label>
   </div>
   <label class="check"><input id="textures" type="checkbox" checked> Generate selected-size textures</label>
-  <label class="check"><input id="shadows" type="checkbox" checked> Ground shading</label>
   <button id="reset">Reset camera</button>
+
   <p class="hint">
-    Click scene for mouse look. WASD move, mouse look, Space/Shift up/down, Esc releases mouse.
-    4K procedural textures use substantial GPU memory and may be limited by your browser/device.
-    These are not Minecraft shader packs or hardware ray tracing.
+    Click the scene for mouse look. WASD move, mouse look, Space/Shift up/down, Esc releases mouse.
+    This WebGL demo uses approximate screen-space-style reflections, ripple distortion, and fake shadows:
+    it does not perform true ray tracing, ray-traced shadows, or physically accurate refraction.
+    4K textures require substantial GPU memory; hardware/browser limits may reduce the usable size.
   </p>
 </aside>
 
@@ -90,19 +105,18 @@
 (() => {
 "use strict";
 
-const canvas=document.querySelector("#view"), gl=canvas.getContext("webgl",{
-  alpha:false,depth:true,antialias:false,powerPreference:"high-performance"
-});
+const canvas=document.querySelector("#view");
+const gl=canvas.getContext("webgl",{alpha:false,depth:true,antialias:false,powerPreference:"high-performance"});
 const stats=document.querySelector("#stats");
 const $=id=>document.getElementById(id);
 
 if(!gl){
   stats.textContent="WebGL unavailable";
-  document.querySelector("#notice").textContent="Enable WebGL/hardware acceleration or try another browser.";
+  $("notice").textContent="Enable WebGL/hardware acceleration or try another browser.";
   return;
 }
 
-const vs=`
+const vertexShader=`
 attribute vec3 aPosition;
 attribute vec3 aNormal;
 attribute vec2 aUV;
@@ -118,112 +132,155 @@ void main(){
   gl_Position=uProjection*uView*world;
 }`;
 
-const fs=`
+const fragmentShader=`
 precision highp float;
 varying vec3 vNormal,vWorld;
 varying vec2 vUV;
 uniform sampler2D uTexture;
-uniform vec3 uColor,uCamera,uLightPos[3],uLightColor[3];
+uniform vec3 uColor,uCamera;
+uniform vec3 uLightPos[3],uLightColor[3];
 uniform float uTime,uLight,uMode,uMaterial;
-uniform bool uHasTexture,uIsFloor,uPuddles,uReflections,uLights,uShadows;
+uniform bool uHasTexture,uIsFloor,uPuddles,uRipples,uRefraction;
+uniform bool uReflections,uLamps,uLampGlow,uShadows;
 
-float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+float hash(vec2 p){
+  return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);
+}
 float noise(vec2 p){
-  vec2 i=floor(p),f=fract(p); f=f*f*(3.0-2.0*f);
-  return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),
-             mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),f.x),f.y);
+  vec2 i=floor(p),f=fract(p);
+  f=f*f*(3.0-2.0*f);
+  return mix(mix(hash(i),hash(i+vec2(1.0,0.0)),f.x),
+             mix(hash(i+vec2(0.0,1.0)),hash(i+vec2(1.0,1.0)),f.x),f.y);
 }
 void main(){
-  vec3 N=normalize(vNormal), V=normalize(uCamera-vWorld);
+  vec3 N=normalize(vNormal);
+  vec3 V=normalize(uCamera-vWorld);
   vec3 base=uColor;
+
   if(uHasTexture) base*=texture2D(uTexture,vUV).rgb;
 
-  float material=uMaterial;
-  if(material<.5){base*=.80+.20*noise(vUV*24.0);}
-  else if(material<1.5){base*=.78+.22*noise(vUV*18.0+uTime*.04);}
-  else if(material<2.5){base=mix(base,vec3(.65,.86,.95),.3);}
-  else if(material<3.5){base*=.65+.65*noise(vUV*30.0);}
+  if(uMaterial<0.5) base*=0.8+0.2*noise(vUV*24.0);
+  else if(uMaterial<1.5) base*=0.78+0.22*noise(vUV*18.0+uTime*0.04);
+  else if(uMaterial<2.5) base=mix(base,vec3(0.65,0.86,0.95),0.3);
+  else if(uMaterial<3.5) base*=0.65+0.65*noise(vUV*30.0);
   else {
-    float lava=noise(vUV*9.0+vec2(uTime*.1,-uTime*.08));
-    base=mix(vec3(.3,.025,.003),vec3(1.,.22,.015),lava);
+    float lava=noise(vUV*9.0+vec2(uTime*0.1,-uTime*0.08));
+    base=mix(vec3(0.3,0.025,0.003),vec3(1.0,0.22,0.015),lava);
   }
 
   float puddle=0.0;
-  if(uIsFloor && uPuddles){
+  if(uIsFloor&&uPuddles){
     vec2 p=vWorld.xz;
-    float cells=noise(floor(p*1.25)*.73);
-    float shape=noise(p*2.8);
-    puddle=smoothstep(.67,.82,cells)*smoothstep(.35,.68,shape);
-    base=mix(base,vec3(.035,.075,.105),puddle*.78);
+    float islands=noise(floor(p*1.4)*0.7);
+    float pattern=noise(p*3.0);
+    puddle=smoothstep(0.64,0.82,islands)*smoothstep(0.30,0.69,pattern);
+
+    if(uRipples){
+      float ripple=sin(length(p)*13.0-uTime*3.0+noise(p*2.0)*3.0);
+      puddle*=0.78+0.22*ripple;
+    }
+
+    base=mix(base,vec3(0.025,0.07,0.11),puddle*0.82);
   }
 
-  vec3 L=normalize(vec3(-.45,.8,.35));
-  float diffuse=max(dot(N,L),0.0);
-  float roughness=(material==0.0)? .18 : ((material==1.0||material==2.0||puddle>.1)?.08:.72);
-  float specPower=mix(8.0,96.0,1.0-roughness);
-  vec3 color=base*(.16+diffuse*uLight);
-  color+=pow(max(dot(reflect(-L,N),V),0.0),specPower)*vec3(.55)*uLight;
+  // Scale the user setting into an artistic brightness range, avoiding extreme values.
+  float brightness=clamp(uLight/16.0,0.05,4.0);
+  vec3 sun=normalize(vec3(-0.45,0.8,0.35));
+  float diffuse=max(dot(N,sun),0.0);
+  float roughness=(uMaterial<0.5)?0.16:((uMaterial<3.0||puddle>0.1)?0.08:0.72);
+  float specPower=mix(8.0,100.0,1.0-roughness);
+  vec3 color=base*(0.12+diffuse*brightness);
+  color+=pow(max(dot(reflect(-sun,N),V),0.0),specPower)*vec3(0.62)*brightness;
 
-  if(uLights){
+  // Three colored point lights with distance falloff.
+  if(uLamps){
     for(int i=0;i<3;i++){
       vec3 delta=uLightPos[i]-vWorld;
-      float dist=max(length(delta),.01);
-      vec3 pointL=delta/dist;
-      float attenuation=1.0/(1.0+.10*dist+.035*dist*dist);
-      float ndl=max(dot(N,pointL),0.0);
-      float spec=pow(max(dot(reflect(-pointL,N),V),0.0),specPower);
-      color+=attenuation*uLightColor[i]*(base*ndl*.75+spec*.35)*uLight;
+      float dist=max(length(delta),0.01);
+      vec3 L=delta/dist;
+      float attenuation=1.0/(1.0+0.08*dist+0.025*dist*dist);
+      float ndl=max(dot(N,L),0.0);
+      float spec=pow(max(dot(reflect(-L,N),V),0.0),specPower);
+      color+=attenuation*uLightColor[i]*brightness*(base*ndl*0.75+spec*0.35);
     }
   }
 
-  if(uReflections && (material<.5||material==1.0||material==2.0||puddle>.1)){
+  // Fake reflective environment term; not a ray-traced reflection.
+  if(uReflections&&(uMaterial<3.0||puddle>0.1)){
     float fresnel=pow(1.0-max(dot(N,V),0.0),4.0);
-    vec3 fakeEnvironment=mix(vec3(.08,.12,.18),vec3(.35,.48,.62),max(N.y,0.0));
-    color=mix(color,mix(base,fakeEnvironment,.55),fresnel*.65+(puddle*.35));
+    vec3 environment=mix(vec3(0.045,0.07,0.12),vec3(0.36,0.49,0.64),max(N.y,0.0));
+    color=mix(color,mix(base,environment,0.58),fresnel*0.68+puddle*0.30);
   }
-  if(uMode>.5 && uMode<1.5){
-    float fresnel=pow(1.0-max(dot(N,V),0.0),3.0);
-    color=mix(color,vec3(.22,.38,.55),fresnel*.24);
-  } else if(uMode>1.5){
-    float bounce=.85+.15*noise(gl_FragCoord.xy*.04+uTime*.02);
-    color*=bounce;
-  }
-  if(uIsFloor&&uShadows) color*=.86+.14*smoothstep(-.1,.8,vWorld.y);
 
+  // Approximate refractive tint/distortion using procedural variation.
+  if(uRefraction&&(uMaterial==1.0||uMaterial==2.0||puddle>0.1)){
+    float distortion=noise(vWorld.xz*7.0+uTime*0.15);
+    color=mix(color,color*vec3(0.86,1.03,1.12)+distortion*0.035,0.28);
+  }
+
+  // Extra noisy indirect-light approximation; not path tracing.
+  if(uMode>1.5){
+    float bounce=0.86+0.14*noise(gl_FragCoord.xy*0.04+uTime*0.02);
+    color=color*bounce+base*0.035*bounce;
+  }else if(uMode>0.5){
+    float fresnel=pow(1.0-max(dot(N,V),0.0),3.0);
+    color=mix(color,vec3(0.22,0.38,0.55),fresnel*0.24);
+  }
+
+  // Cheap height-based ground darkening, not a shadow map.
+  if(uIsFloor&&uShadows){
+    float shadowNoise=noise(vWorld.xz*0.22);
+    color*=0.72+0.18*shadowNoise+0.10*smoothstep(-0.1,0.8,vWorld.y);
+  }
+
+  if(uMaterial>3.5&&uLampGlow) color+=base*0.55;
   gl_FragColor=vec4(color,1.0);
 }`;
 
 function compile(type,source){
-  const s=gl.createShader(type);
-  gl.shaderSource(s,source); gl.compileShader(s);
-  if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s));
-  return s;
+  const shader=gl.createShader(type);
+  gl.shaderSource(shader,source);
+  gl.compileShader(shader);
+  if(!gl.getShaderParameter(shader,gl.COMPILE_STATUS)){
+    const error=gl.getShaderInfoLog(shader)||"Unknown shader compile error";
+    gl.deleteShader(shader);
+    throw new Error(error);
+  }
+  return shader;
 }
+
 let program;
 try{
   program=gl.createProgram();
-  gl.attachShader(program,compile(gl.VERTEX_SHADER,vs));
-  gl.attachShader(program,compile(gl.FRAGMENT_SHADER,fs));
+  gl.attachShader(program,compile(gl.VERTEX_SHADER,vertexShader));
+  gl.attachShader(program,compile(gl.FRAGMENT_SHADER,fragmentShader));
   gl.linkProgram(program);
-  if(!gl.getProgramParameter(program,gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(program));
-}catch(e){
+  if(!gl.getProgramParameter(program,gl.LINK_STATUS)){
+    throw new Error(gl.getProgramInfoLog(program)||"Shader linking failed");
+  }
+}catch(error){
   stats.textContent="Shader error";
-  document.querySelector("#notice").textContent=e.message;
-  console.error(e); return;
+  $("notice").textContent=error.message;
+  console.error(error);
+  return;
 }
 gl.useProgram(program);
 
 const U={};
-for(const name of ["uModel","uView","uProjection","uNormal","uTexture","uColor","uCamera",
-  "uLightPos","uLightColor","uTime","uLight","uMode","uMaterial","uHasTexture",
-  "uIsFloor","uPuddles","uReflections","uLights","uShadows"]) U[name]=gl.getUniformLocation(program,name);
+[
+  "uModel","uView","uProjection","uNormal","uTexture","uColor","uCamera",
+  "uLightPos","uLightColor","uTime","uLight","uMode","uMaterial",
+  "uHasTexture","uIsFloor","uPuddles","uRipples","uRefraction",
+  "uReflections","uLamps","uLampGlow","uShadows"
+].forEach(name=>U[name]=gl.getUniformLocation(program,name));
+
 const A={
   p:gl.getAttribLocation(program,"aPosition"),
   n:gl.getAttribLocation(program,"aNormal"),
   uv:gl.getAttribLocation(program,"aUV")
 };
 
-function meshData(kind){
+function createMeshData(kind){
   const p=[],n=[],uv=[],idx=[];
   function face(a,b,c,d,norm){
     const start=p.length/3;
@@ -232,6 +289,7 @@ function meshData(kind){
     }
     idx.push(start,start+1,start+2,start,start+2,start+3);
   }
+
   if(kind==="cube"){
     face([-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1],[0,0,1]);
     face([1,-1,-1],[-1,-1,-1],[-1,1,-1],[1,1,-1],[0,0,-1]);
@@ -240,66 +298,86 @@ function meshData(kind){
     face([-1,1,1],[1,1,1],[1,1,-1],[-1,1,-1],[0,1,0]);
     face([-1,-1,-1],[1,-1,-1],[1,-1,1],[-1,-1,1],[0,-1,0]);
   }else if(kind==="sphere"){
-    const rings=12,seg=18;
-    for(let y=0;y<=rings;y++)for(let x=0;x<=seg;x++){
-      const v=y/rings,phi=v*Math.PI,u=x/seg,theta=u*Math.PI*2;
-      const q=[Math.sin(phi)*Math.cos(theta),Math.cos(phi),Math.sin(phi)*Math.sin(theta)];
-      p.push(...q);n.push(...q);uv.push(u,v);
+    const rings=12,segments=18;
+    for(let y=0;y<=rings;y++){
+      const v=y/rings,phi=v*Math.PI;
+      for(let x=0;x<=segments;x++){
+        const u=x/segments,theta=u*Math.PI*2;
+        const q=[Math.sin(phi)*Math.cos(theta),Math.cos(phi),Math.sin(phi)*Math.sin(theta)];
+        p.push(...q);n.push(...q);uv.push(u,v);
+      }
     }
-    for(let y=0;y<rings;y++)for(let x=0;x<seg;x++){
-      const a=y*(seg+1)+x,b=a+seg+1;
+    for(let y=0;y<rings;y++)for(let x=0;x<segments;x++){
+      const a=y*(segments+1)+x,b=a+segments+1;
       idx.push(a,b,a+1,b,b+1,a+1);
     }
   }else{
-    const seg=20;
-    for(let i=0;i<=seg;i++){
-      const a=i/seg*Math.PI*2,x=Math.cos(a),z=Math.sin(a);
-      p.push(x,-1,z,x,1,z);n.push(x,0,z,x,0,z);uv.push(i/seg,0,i/seg,1);
+    const segments=20;
+    for(let i=0;i<=segments;i++){
+      const angle=i/segments*Math.PI*2,x=Math.cos(angle),z=Math.sin(angle);
+      p.push(x,-1,z,x,1,z);n.push(x,0,z,x,0,z);uv.push(i/segments,0,i/segments,1);
     }
-    for(let i=0;i<seg;i++){const a=i*2,b=a+2;idx.push(a,b,a+1,b,b+1,a+1);}
+    for(let i=0;i<segments;i++){
+      const a=i*2,b=a+2;
+      idx.push(a,b,a+1,b,b+1,a+1);
+    }
   }
   return {p:new Float32Array(p),n:new Float32Array(n),uv:new Float32Array(uv),idx:new Uint16Array(idx)};
 }
-function makeMesh(d){
-  const m={};
-  for(const [key,data] of [["p",d.p],["n",d.n],["uv",d.uv]]){
-    m[key]=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,m[key]);gl.bufferData(gl.ARRAY_BUFFER,data,gl.STATIC_DRAW);
+
+function makeMesh(data){
+  const mesh={};
+  for(const [key,values] of [["p",data.p],["n",data.n],["uv",data.uv]]){
+    mesh[key]=gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER,mesh[key]);
+    gl.bufferData(gl.ARRAY_BUFFER,values,gl.STATIC_DRAW);
   }
-  m.idx=gl.createBuffer();gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,m.idx);
-  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,d.idx,gl.STATIC_DRAW);m.count=d.idx.length;
-  return m;
-}
-const meshes={cube:makeMesh(meshData("cube")),sphere:makeMesh(meshData("sphere")),cylinder:makeMesh(meshData("cylinder"))};
-function bindMesh(m){
-  for(const [k,a,size] of [["p",A.p,3],["n",A.n,3],["uv",A.uv,2]]){
-    gl.bindBuffer(gl.ARRAY_BUFFER,m[k]);gl.enableVertexAttribArray(a);
-    gl.vertexAttribPointer(a,size,gl.FLOAT,false,0,0);
-  }
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,m.idx);
+  mesh.idx=gl.createBuffer();
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,mesh.idx);
+  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,data.idx,gl.STATIC_DRAW);
+  mesh.count=data.idx.length;
+  return mesh;
 }
 
-function createTexture(material,resolution){
-  const max=gl.getParameter(gl.MAX_TEXTURE_SIZE);
-  const size=Math.min(resolution,max);
-  const c=document.createElement("canvas");c.width=size;c.height=size;
-  const ctx=c.getContext("2d",{willReadFrequently:false});
+const meshes={
+  cube:makeMesh(createMeshData("cube")),
+  sphere:makeMesh(createMeshData("sphere")),
+  cylinder:makeMesh(createMeshData("cylinder"))
+};
+
+function bindMesh(mesh){
+  for(const [key,attribute,size] of [["p",A.p,3],["n",A.n,3],["uv",A.uv,2]]){
+    gl.bindBuffer(gl.ARRAY_BUFFER,mesh[key]);
+    gl.enableVertexAttribArray(attribute);
+    gl.vertexAttribPointer(attribute,size,gl.FLOAT,false,0,0);
+  }
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,mesh.idx);
+}
+
+function textureForMaterial(material,resolution){
+  const maxSize=gl.getParameter(gl.MAX_TEXTURE_SIZE);
+  const size=Math.min(resolution,maxSize);
+  const c=document.createElement("canvas");
+  c.width=size;c.height=size;
+  const ctx=c.getContext("2d");
   const colors=["#8996a8","#1766a0","#9cc9d7","#287b2b","#ed490b"];
-  ctx.fillStyle=colors[material];ctx.fillRect(0,0,size,size);
+  ctx.fillStyle=colors[material];
+  ctx.fillRect(0,0,size,size);
 
-  // Build at selected dimensions; cap detail work while still uploading full-size image.
+  // Fill a full-resolution canvas with procedural detail.
   const step=Math.max(1,Math.floor(size/256));
   for(let y=0;y<size;y+=step){
     for(let x=0;x<size;x+=step){
       const r=Math.random();
-      if(material===0&&r<.15){ctx.fillStyle="rgba(255,255,255,.16)";ctx.fillRect(x,y,step,step);}
-      if(material===1&&r<.11){ctx.fillStyle="rgba(160,220,255,.22)";ctx.fillRect(x,y,step,step);}
-      if(material===2&&r<.09){ctx.fillStyle="rgba(255,255,255,.2)";ctx.fillRect(x,y,step,step);}
-      if(material===3&&r<.22){ctx.fillStyle="rgba(10,55,8,.24)";ctx.fillRect(x,y,step,step);}
-      if(material===4&&r<.18){ctx.fillStyle="rgba(255,180,20,.38)";ctx.fillRect(x,y,step,step);}
+      if(r<0.10){
+        ctx.fillStyle=material===4?"rgba(255,180,20,.35)":"rgba(255,255,255,.16)";
+        ctx.fillRect(x,y,step,step);
+      }
     }
   }
-  const tex=gl.createTexture();
-  gl.bindTexture(gl.TEXTURE_2D,tex);
+
+  const texture=gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D,texture);
   gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);
   gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,c);
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.REPEAT);
@@ -307,62 +385,81 @@ function createTexture(material,resolution){
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
   gl.generateMipmap(gl.TEXTURE_2D);
-  return tex;
+  return texture;
 }
 
-let textures=[];
-let textureResolution=0;
+let textures=[],textureSize=0;
 function updateTextures(){
-  if(!$("textures").checked){textures=[];textureResolution=0;return;}
+  if(!$("textures").checked){
+    textures.forEach(t=>gl.deleteTexture(t));
+    textures=[];textureSize=0;return;
+  }
   const requested=Number($("resolution").value);
-  if(requested===textureResolution&&textures.length)return;
+  if(requested===textureSize&&textures.length===5)return;
+
   textures.forEach(t=>gl.deleteTexture(t));
   textures=[];
   try{
-    for(let i=0;i<5;i++)textures.push(createTexture(i,requested));
-    textureResolution=requested;
-    const actual=Math.min(requested,gl.getParameter(gl.MAX_TEXTURE_SIZE));
-    if(requested>actual) $("notice").textContent=`GPU limit: textures capped at ${actual}px`;
-  }catch(e){
-    textures=[];textureResolution=0;
-    $("notice").textContent="Texture allocation failed; lower texture resolution.";
-    console.error(e);
+    for(let i=0;i<5;i++)textures.push(textureForMaterial(i,requested));
+    textureSize=requested;
+    const supported=Math.min(requested,gl.getParameter(gl.MAX_TEXTURE_SIZE));
+    if(supported<requested)$("notice").textContent=`Device texture limit: ${supported}px`;
+  }catch(error){
+    textures=[];textureSize=0;
+    $("notice").textContent="Texture allocation failed; select a lower resolution.";
+    console.error(error);
   }
 }
 $("resolution").addEventListener("change",updateTextures);
 $("textures").addEventListener("change",updateTextures);
 updateTextures();
 
-const materialColors=[
-  [0.83,0.86,0.92],[0.58,0.78,0.95],[0.9,0.96,1],
+const colors=[
+  [0.83,0.86,0.92],[0.58,0.78,0.95],[0.9,0.96,1.0],
   [0.75,0.92,0.65],[1.0,0.72,0.35]
 ];
-const rand=(a,b)=>a+Math.random()*(b-a);
 let objects=[];
-function rebuild(){
+const random=(min,max)=>min+Math.random()*(max-min);
+
+function rebuildScene(){
   const size=$("size").value;
-  const max=size==="Small"?120:size==="Mid"?450:1000;
+  const cap=size==="Small"?120:size==="Mid"?450:1000;
   const span=size==="Small"?7:size==="Mid"?15:27;
-  const count=Math.min(Number($("count").value),max);
   objects=[];
+  const count=Math.min(Number($("count").value),cap);
+
   for(let i=0;i<count;i++){
-    const mat=i%5;
-    objects.push({x:rand(-span,span),y:rand(.35,1.4),z:rand(-span,span),
-      s:rand(.28,.85),rot:rand(0,6.28),speed:rand(-.35,.35),mat,
-      kind:["cube","sphere","cylinder"][i%3]});
+    const material=i%5;
+    objects.push({
+      x:random(-span,span),y:random(.35,1.4),z:random(-span,span),
+      s:random(.28,.85),rotation:random(0,Math.PI*2),speed:random(-.35,.35),
+      material,kind:["cube","sphere","cylinder"][i%3]
+    });
   }
 }
-$("size").addEventListener("change",rebuild);
-$("count").addEventListener("input",()=>{$("countLabel").textContent=$("count").value;rebuild();});
-$("scale").addEventListener("input",()=>{$("scaleLabel").textContent=Math.round(+$("scale").value*100)+"%";});
-$("light").addEventListener("input",()=>{$("lightLabel").textContent=(+$("light").value).toFixed(1);});
-rebuild();
+$("size").addEventListener("change",rebuildScene);
+$("count").addEventListener("input",()=>{
+  $("countLabel").textContent=$("count").value;
+  rebuildScene();
+});
+$("scale").addEventListener("input",()=>{
+  $("scaleLabel").textContent=Math.round(+$("scale").value*100)+"%";
+});
+$("light").addEventListener("input",()=>{
+  $("lightLabel").textContent=$("light").value;
+});
+rebuildScene();
 
 let camera={x:0,y:2.2,z:9,yaw:0,pitch:-.08};
 const keys=new Set();
-addEventListener("keydown",e=>{keys.add(e.code);if(e.code==="Space")e.preventDefault();});
+addEventListener("keydown",e=>{
+  keys.add(e.code);
+  if(e.code==="Space")e.preventDefault();
+});
 addEventListener("keyup",e=>keys.delete(e.code));
-$("reset").onclick=()=>camera={x:0,y:2.2,z:9,yaw:0,pitch:-.08};
+$("reset").addEventListener("click",()=>{
+  camera={x:0,y:2.2,z:9,yaw:0,pitch:-.08};
+});
 canvas.addEventListener("click",()=>canvas.requestPointerLock?.());
 addEventListener("mousemove",e=>{
   if(document.pointerLockElement!==canvas)return;
@@ -371,7 +468,8 @@ addEventListener("mousemove",e=>{
 });
 
 function viewMatrix(eye,yaw,pitch){
-  const cp=Math.cos(pitch),f=[Math.sin(yaw)*cp,Math.sin(pitch),-Math.cos(yaw)*cp];
+  const cp=Math.cos(pitch);
+  const f=[Math.sin(yaw)*cp,Math.sin(pitch),-Math.cos(yaw)*cp];
   const r=[Math.cos(yaw),0,Math.sin(yaw)];
   const u=[-Math.sin(yaw)*Math.sin(pitch),Math.cos(pitch),Math.cos(yaw)*Math.sin(pitch)];
   const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
@@ -382,17 +480,24 @@ function viewMatrix(eye,yaw,pitch){
 }
 function perspective(fov,aspect,near,far){
   const f=1/Math.tan(fov*Math.PI/360),nf=1/(near-far);
-  return new Float32Array([f/aspect,0,0,0,0,f,0,0,0,0,(far+near)*nf,-1,0,0,2*far*near*nf,0]);
+  return new Float32Array([
+    f/aspect,0,0,0,0,f,0,0,0,0,(far+near)*nf,-1,0,0,2*far*near*nf,0
+  ]);
 }
-function modelMatrix(pos,s,rot=0){
-  const c=Math.cos(rot),q=Math.sin(rot);
-  return new Float32Array([c*s[0],0,-q*s[0],0,0,s[1],0,0,q*s[2],0,c*s[2],0,pos[0],pos[1],pos[2],1]);
+function modelMatrix(pos,s,rotation=0){
+  const c=Math.cos(rotation),q=Math.sin(rotation);
+  return new Float32Array([
+    c*s[0],0,-q*s[0],0,0,s[1],0,0,q*s[2],0,c*s[2],0,pos[0],pos[1],pos[2],1
+  ]);
 }
 function normalMatrix(m){
   const sx=Math.hypot(m[0],m[2])||1,sz=Math.hypot(m[8],m[10])||1;
-  return new Float32Array([m[0]/(sx*sx),0,m[2]/(sx*sx),0,1/(m[5]||1),0,m[8]/(sz*sz),0,m[10]/(sz*sz)]);
+  return new Float32Array([
+    m[0]/(sx*sx),0,m[2]/(sx*sx),
+    0,1/(m[5]||1),0,
+    m[8]/(sz*sz),0,m[10]/(sz*sz)
+  ]);
 }
-
 function draw(mesh,model,color,material,isFloor,time,mode){
   bindMesh(mesh);
   gl.uniformMatrix4fv(U.uModel,false,model);
@@ -402,72 +507,99 @@ function draw(mesh,model,color,material,isFloor,time,mode){
   gl.uniform1f(U.uTime,time);
   gl.uniform1f(U.uMode,mode);
   gl.uniform1i(U.uIsFloor,isFloor?1:0);
-  const hasTexture=$("textures").checked&&textures[material];
+
+  const hasTexture=$("textures").checked&&Boolean(textures[material]);
   gl.uniform1i(U.uHasTexture,hasTexture?1:0);
-  if(hasTexture){gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,textures[material]);}
+  if(hasTexture){
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D,textures[material]);
+  }
   gl.drawElements(gl.TRIANGLES,mesh.count,gl.UNSIGNED_SHORT,0);
 }
 
-let previous=performance.now(),sampleStart=previous,sampleFrames=0;
-function frame(now){
-  requestAnimationFrame(frame);
-  const dt=Math.min((now-previous)/1000,.05);previous=now;
-  sampleFrames++;
-  if(now-sampleStart>=500){
-    stats.textContent=`FPS: ${(sampleFrames*1000/(now-sampleStart)).toFixed(1)}\nObjects: ${objects.length}\nWebGL: active`;
-    sampleFrames=0;sampleStart=now;
+let previous=performance.now(),fpsStart=previous,frameCount=0;
+function render(now){
+  requestAnimationFrame(render);
+  const dt=Math.min((now-previous)/1000,.05);
+  previous=now;
+  frameCount++;
+
+  if(now-fpsStart>=500){
+    stats.textContent=
+      `FPS: ${(frameCount*1000/(now-fpsStart)).toFixed(1)}\nObjects: ${objects.length}\nWebGL: active`;
+    frameCount=0;
+    fpsStart=now;
   }
 
-  const speed=Math.max(1,Math.min(30,+$("speed").value||7))*dt;
-  const f=[Math.sin(camera.yaw),0,-Math.cos(camera.yaw)],r=[Math.cos(camera.yaw),0,Math.sin(camera.yaw)];
-  if(keys.has("KeyW")){camera.x+=f[0]*speed;camera.z+=f[2]*speed;}
-  if(keys.has("KeyS")){camera.x-=f[0]*speed;camera.z-=f[2]*speed;}
-  if(keys.has("KeyD")){camera.x+=r[0]*speed;camera.z+=r[2]*speed;}
-  if(keys.has("KeyA")){camera.x-=r[0]*speed;camera.z-=r[2]*speed;}
+  const speed=Math.max(1,Math.min(30,Number($("speed").value)||7))*dt;
+  const forward=[Math.sin(camera.yaw),0,-Math.cos(camera.yaw)];
+  const right=[Math.cos(camera.yaw),0,Math.sin(camera.yaw)];
+  if(keys.has("KeyW")){camera.x+=forward[0]*speed;camera.z+=forward[2]*speed;}
+  if(keys.has("KeyS")){camera.x-=forward[0]*speed;camera.z-=forward[2]*speed;}
+  if(keys.has("KeyD")){camera.x+=right[0]*speed;camera.z+=right[2]*speed;}
+  if(keys.has("KeyA")){camera.x-=right[0]*speed;camera.z-=right[2]*speed;}
   if(keys.has("Space"))camera.y+=speed;
   if(keys.has("ShiftLeft")||keys.has("ShiftRight"))camera.y-=speed;
 
-  const scale=+$("scale").value;
-  const w=Math.max(1,Math.floor(innerWidth*scale)),h=Math.max(1,Math.floor(innerHeight*scale));
-  if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}
-  gl.viewport(0,0,w,h);gl.enable(gl.DEPTH_TEST);
-  gl.clearColor(.025,.04,.065,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+  const scale=Number($("scale").value);
+  const width=Math.max(1,Math.floor(innerWidth*scale));
+  const height=Math.max(1,Math.floor(innerHeight*scale));
+  if(canvas.width!==width||canvas.height!==height){
+    canvas.width=width;canvas.height=height;
+  }
+
+  gl.viewport(0,0,width,height);
+  gl.enable(gl.DEPTH_TEST);
+  gl.clearColor(.025,.04,.065,1);
+  gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
 
   gl.uniformMatrix4fv(U.uView,false,viewMatrix([camera.x,camera.y,camera.z],camera.yaw,camera.pitch));
-  gl.uniformMatrix4fv(U.uProjection,false,perspective(Math.max(45,Math.min(110,+$("fov").value||75)),w/h,.1,250));
+  gl.uniformMatrix4fv(U.uProjection,false,perspective(
+    Math.max(45,Math.min(110,Number($("fov").value)||75)),
+    width/height,.1,250
+  ));
   gl.uniform3f(U.uCamera,camera.x,camera.y,camera.z);
-  gl.uniform1f(U.uLight,+$("light").value);
+
+  const level=Number($("light").value);
+  gl.uniform1f(U.uLight,level);
   gl.uniform1i(U.uPuddles,$("puddles").checked?1:0);
+  gl.uniform1i(U.uRipples,$("ripples").checked?1:0);
+  gl.uniform1i(U.uRefraction,$("refraction").checked?1:0);
   gl.uniform1i(U.uReflections,$("reflections").checked?1:0);
-  gl.uniform1i(U.uLights,$("lights").checked?1:0);
+  gl.uniform1i(U.uLamps,$("lamps").checked?1:0);
+  gl.uniform1i(U.uLampGlow,$("lampGlow").checked?1:0);
   gl.uniform1i(U.uShadows,$("shadows").checked?1:0);
   gl.uniform1i(U.uTexture,0);
 
-  const lightPositions=new Float32Array([-5,5,-4, 5,4,3, 0,6,8]);
-  const lightColors=new Float32Array([1,.72,.48, .45,.68,1, .55,1,.68]);
-  gl.uniform3fv(U.uLightPos,lightPositions);
-  gl.uniform3fv(U.uLightColor,lightColors);
+  gl.uniform3fv(U.uLightPos,new Float32Array([-5,5,-4, 5,4,3, 0,6,8]));
+  gl.uniform3fv(U.uLightColor,new Float32Array([1,.72,.48, .45,.68,1, .55,1,.68]));
 
-  const mode=$("shader").value==="ray"?1:$("shader").value==="path"?2:0;
+  const shader=$("shader").value;
+  const mode=shader==="reflect"?1:shader==="path"?2:0;
   const time=$("animate").checked?now/1000:0;
 
-  // Ground: large textured plane with procedural puddle reflections.
+  // Ground plane with procedural puddle/ripple and lighting effects.
   draw(meshes.cube,modelMatrix([0,-.18,0],[30,.12,30]),[.48,.52,.43],3,true,time,mode);
 
-  // Visible emissive-looking light markers.
-  if($("lights").checked){
-    const lamps=[[-5,4,-4],[5,3,3],[0,5,8]];
+  // Lamp geometry is visible; point lights are calculated in the shader.
+  if($("lamps").checked){
+    const lampPositions=[[-5,4,-4],[5,3,3],[0,5,8]];
     const lampColors=[[1,.55,.22],[.30,.58,1],[.35,1,.5]];
-    lamps.forEach((p,i)=>draw(meshes.sphere,modelMatrix(p,[.22,.22,.22]),lampColors[i],4,false,time,mode));
+    for(let i=0;i<lampPositions.length;i++){
+      draw(meshes.sphere,modelMatrix(lampPositions[i],[.22,.22,.22]),
+        lampColors[i],4,false,time,mode);
+    }
   }
 
   for(const o of objects){
-    const bob=$("animate").checked?Math.sin(time*o.speed*2+o.rot)*.08:0;
-    draw(meshes[o.kind],modelMatrix([o.x,o.y+bob,o.z],[o.s,o.s,o.s],o.rot+time*o.speed),
-      materialColors[o.mat],o.mat,false,time,mode);
+    const bob=$("animate").checked?Math.sin(time*o.speed*2+o.rotation)*.08:0;
+    draw(meshes[o.kind],
+      modelMatrix([o.x,o.y+bob,o.z],[o.s,o.s,o.s],o.rotation+time*o.speed),
+      colors[o.material],o.material,false,time,mode);
   }
 }
-requestAnimationFrame(frame);
+
+requestAnimationFrame(render);
 })();
 </script>
 </body>
